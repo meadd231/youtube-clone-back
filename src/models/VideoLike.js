@@ -8,8 +8,10 @@ module.exports = (sequelize, DataTypes) =>
       defaultValue: Sequelize.UUIDV4,
       primaryKey: true,
     },
-    like: {
-      type: DataTypes.INTEGER,
+
+    type: {
+      type: DataTypes.STRING,
       allowNull: false,
-    },
+      defaultValue: 'like'
+    }
   });

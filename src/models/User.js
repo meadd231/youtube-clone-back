@@ -31,12 +31,12 @@ module.exports = (sequelize, DataTypes) => {
     avatar: {
       type: DataTypes.STRING,
       defaultValue:
-        "https://res.cloudinary.com/tylerdurden/image/upload/v1602657481/random/pngfind.com-default-image-png-6764065_krremh.png",
+        "avatar.png",
     },
     cover: {
       type: DataTypes.STRING,
       defaultValue:
-        "https://res.cloudinary.com/tylerdurden/image/upload/v1617334073/random/Rectangle_2_mbyujf.png",
+        "default.png",
     },
     channelDescription: {
       type: DataTypes.STRING,
@@ -46,5 +46,13 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       defaultValue: false,
     },
+    subscribeNum: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+    },
+    signupType: {
+      type: DataTypes.STRING,
+      defaultValue: 'local',
+    }
   });
 };

@@ -8,8 +8,20 @@ module.exports = (sequelize, DataTypes) =>
       primaryKey: true,
       defaultValue: Sequelize.UUIDV4,
     },
-    text: {
+    content: {
       type: DataTypes.STRING,
       allowNull: false,
+    },
+    likes: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+    },
+    dislikes: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+    },
+    replyNum: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
     },
   });

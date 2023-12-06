@@ -8,8 +8,4 @@ module.exports = (sequelize, DataTypes) =>
       primaryKey: true,
       defaultValue: Sequelize.UUIDV4,
     },
-    subscriber: {
-      type: DataTypes.UUID,
-      allowNull: false,
-    },
   });
