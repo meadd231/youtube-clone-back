@@ -41,7 +41,7 @@ class CommentsController {
       comment.replyNum++;
       await comment.save();
 
-      reply.dataValues.User = { nickname: user.nickname };
+      reply.dataValues.User = { nickname: user.nickname, avatar: user.avatar };
 
       console.log("post reply", reply);
 

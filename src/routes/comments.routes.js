@@ -8,7 +8,7 @@ const commentsController = new CommentsController();
 
 router.post("/comment", auth, commentsController.postComment);
 
-router.post("replies/reply", auth, commentsController.postReply);
+router.post("/replies/reply", auth, commentsController.postReply);
 
 router.get("/count/:videoId", commentsController.getCommentsCount);
 
