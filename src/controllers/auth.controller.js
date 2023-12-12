@@ -7,9 +7,9 @@ const path = require("path");
 
 class AuthController {
   constructor() {
-    const CLIENT_ID =
+    this.CLIENT_ID =
       "1068422300037-8dbd9nkbtoriimouhcta0091nmn3fc0i.apps.googleusercontent.com";
-    this.client = new OAuth2Client(CLIENT_ID);
+    this.client = new OAuth2Client(this.CLIENT_ID);
     this.storage = multer.diskStorage({
       destination: (req, file, cb) => {
         cb(null, "../uploads/avatars"); // 파일이 저장될 폴더 지정
@@ -132,9 +132,9 @@ class AuthController {
 
   verifyGoogleToken = async (token) => {
     try {
-      const ticket = await client.verifyIdToken({
+      const ticket = await this.client.verifyIdToken({
         idToken: token,
-        audience: CLIENT_ID, // 클라이언트 ID를 지정하여 검증
+        audience: this.CLIENT_ID, // 클라이언트 ID를 지정하여 검증
       });
 
       const payload = ticket.getPayload();

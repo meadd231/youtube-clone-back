@@ -193,6 +193,44 @@ class CommentsController {
       .status(201)
       .json({ success: true, likes: comment.likes, liked, disliked });
   };
+
+  patchComment = async (req, res) => {
+    try {
+      const { user } = req.locals;
+      const { commentId } = req.params;
+      const { content } = req.body;
+      const comment = await Comments.findByPk(commentId);
+      if (user.id !== comment.userId) {
+        // 프론트에서도 막겠지만 서버에서도 막아줘야 할 듯
+        return res
+          .status(401)
+          .json({ success: false, message: "올바른 유저가 아닙니다." });
+      }
+      comment.content = content;
+      await comment.save();
+
+      res.status(200).json({ success: true, comment });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  deleteComment = async (req, res) => {
+    try {
+      const { user } = req.locals;
+      const { commentId } = req.params;
+      const comment = await Comments.findByPk(commentId);
+      if (user.id !== comment.userId) {
+        // 프론트에서도 막겠지만 서버에서도 막아줘야 할 듯
+        return res
+          .status(401)
+          .json({ success: false, message: "올바른 유저가 아닙니다." });
+      }
+      await Comments.destroy({where: {id: commentId}});
+    } catch (error) {
+      console.error(error);
+    }
+  };
 }
 
 module.exports = CommentsController;

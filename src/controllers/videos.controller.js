@@ -3,6 +3,7 @@ const { Video, User, VideoLike } = require("../sequelize");
 const multer = require("multer");
 const ffmpeg = require("fluent-ffmpeg");
 const redis = require("../redis");
+const path = require("path");
 
 class VideosController {
   constructor() {
@@ -11,6 +12,9 @@ class VideosController {
         cb(null, "../uploads/videos");
       },
       filename: (req, file, cb) => {
+        file.originalname = Buffer.from(file.originalname, "latin1").toString(
+          "utf8"
+        );
         cb(null, `${Date.now()}_${file.originalname}`);
       },
       fileFilter: (req, file, cb) => {
@@ -25,6 +29,21 @@ class VideosController {
       },
     });
     this.upload = multer({ storage: this.storage }).single("file");
+    this.thumbnailStorage = multer.diskStorage({
+      destination: (req, file, cb) => {
+        cb(null, "../uploads/thumbnails"); // 파일이 저장될 폴더 지정
+      },
+      filename: (req, file, cb) => {
+        file.originalname = Buffer.from(file.originalname, "latin1").toString(
+          "utf8"
+        );
+        cb(
+          null,
+          `${Date.now()}_${file.originalname}`
+        );
+      },
+    });
+    this.thumbnailUpload = multer({ storage: this.thumbnailStorage });
   }
 
   uploadVideo = (req, res) => {
@@ -47,6 +66,7 @@ class VideosController {
   postThumbnail = (req, res) => {
     try {
       let thumbsFilePath = "";
+      let thumbsFilePaths = "";
       let fileDuration = "";
 
       ffmpeg.ffprobe(req.body.filePath, function (err, metadata) {
@@ -61,12 +81,15 @@ class VideosController {
           console.log("Will generate " + filenames.join(", "));
 
           thumbsFilePath = filenames[0];
+          thumbsFilePaths = filenames.join(",");
         })
         .on("end", function () {
+          // ffmpeg의 동작이 끝날 때 end라는 이벤트가 호출되고 그 때 호출될 콜백 함수라는 것 같음.
           console.log("Screenshots taken");
           return res.json({
             success: true,
-            thumbsFilePath: thumbsFilePath,
+            thumbsFilePath,
+            thumbsFilePaths,
             fileDuration: fileDuration,
           });
         })
@@ -78,6 +101,16 @@ class VideosController {
           // %b input basename ( filename w/o extension )
           filename: "thumbnail-%b.png",
         });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  postCustomThumbnail = async (req, res) => {
+    try {
+      console.log("File received:", req.file);
+      const uploadedFileName = req.file.filename;
+      res.status(201).json({ success: true, uploadedFileName });
     } catch (error) {
       console.error(error);
     }

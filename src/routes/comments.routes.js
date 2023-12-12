@@ -18,4 +18,8 @@ router.get("/:commentId/replies", auth, commentsController.getReplies);
 
 router.post("/:commentId/like", auth, commentsController.postCommentLike);
 
+router
+  .route("/:commentId")
+  .patch(auth, commentsController.patchComment)
+  .delete(auth, commentsController.deleteComment)
 module.exports = router;

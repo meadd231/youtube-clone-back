@@ -10,6 +10,9 @@ router.post("/upload-video-file", videosController.uploadVideo);
 
 router.post("/thumbnail", videosController.postThumbnail);
 
+// 프로필 이미지 수정
+router.post("/custom-thumbnail", videosController.thumbnailUpload.single("file"), videosController.postCustomThumbnail);
+
 router.post("/video", videosController.postVideo);
 
 router.get("/", videosController.getVideos);
