@@ -1,7 +1,19 @@
 const { User, Subscription } = require("../sequelize");
 
 class SubscribesController {
-  
+  getUsersSubscribes = async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { user } = req.locals;
+      const subscribes = await Subscription.findAll({
+        where: { subscriberId: user.id },
+      });
+      res.status(200).json({ success: true, subscribes });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   // 구독 api. 조건문을 걸고 있다면 구독 취소, 없다면 구독
   postSubscribe = async (req, res) => {
     try {

@@ -6,7 +6,7 @@ const jwt = require("jsonwebtoken");
 const authRouter = require('./auth.routes');
 const videosRouter = require('./videos.routes');
 const commentsRouter = require('./comments.routes');
-const subscribesRouter = require('./subscribes.routes');
+const subscribesRouter = require('./subscribes');
 
 const { auth } = require('../middleware/auth');
 

@@ -6,6 +6,8 @@ const { auth } = require("../middleware/auth");
 const SubscribesController = require("../controllers/subscribes.controller");
 const subscribesController = new SubscribesController();
 
+router.get("/users/:userId", subscribesController.getUsersSubscribes);
+
 router.post("/subscribe", auth, subscribesController.postSubscribe);
 
 router.get("/:channelId/subscribed", auth, subscribesController.getChannelSubscribed);
