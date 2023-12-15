@@ -19,7 +19,6 @@ router.post("/google-oauth", authController.googleOauth);
 
 // 프로필 이미지 수정
 router.put("/avatar", auth, authController.upload.single("file"), authController.putAvatar);
-
 router.put("/avatar/reset", auth, authController.avatarReset);
 
 module.exports = router;

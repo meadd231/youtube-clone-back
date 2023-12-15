@@ -3,10 +3,12 @@ const { User, Subscription } = require("../sequelize");
 class SubscribesController {
   getUsersSubscribes = async (req, res) => {
     try {
-      const { userId } = req.params;
       const { user } = req.locals;
       const subscribes = await Subscription.findAll({
         where: { subscriberId: user.id },
+        include: [
+          { model: User, attributes: ["nickname", "avatar"], as: "channel" },
+        ],
       });
       res.status(200).json({ success: true, subscribes });
     } catch (error) {

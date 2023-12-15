@@ -6,7 +6,7 @@ const { auth } = require("../middleware/auth");
 const SubscribesController = require("../controllers/subscribes.controller");
 const subscribesController = new SubscribesController();
 
-router.get("/users/:userId", subscribesController.getUsersSubscribes);
+router.get("/users", auth, subscribesController.getUsersSubscribes);
 
 router.post("/subscribe", auth, subscribesController.postSubscribe);
 
