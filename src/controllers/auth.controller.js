@@ -29,20 +29,11 @@ class AuthController {
 
       // 비밀번호 해시화
       const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(user.password, salt);
 
-      // db에 만든 레코드 저장
+      user.password = await bcrypt.hash(user.password, salt);
       await user.save();
 
-      // jwt 토큰에 userId 담고 토큰 생성
-      const payload = {
-        id: user.id,
-        nickname: user.nickname,
-        avatar: user.avatar,
-      };
-      const token = jwt.sign(payload, process.env.JWT_SECRET, {
-        expiresIn: process.env.ACCESS_EXPIRES,
-      });
+      const token = this.createJwtToken(user);
 
       // 응답
       res.status(200).json({ success: true, data: token });
@@ -50,6 +41,32 @@ class AuthController {
       console.error(error);
     }
   };
+
+  /**
+   * JWT 토큰 생성
+   * @param {*} user: User Model
+   */
+  createJwtToken = (user) => {
+    const payload = this.createJwtPayload(user);
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: process.env.ACCESS_EXPIRES,
+    });
+    return token;
+  }
+
+  /**
+   * JWT Payload 생성
+   * @param {*} user: User Model
+   */
+  createJwtPayload = (user) => {
+    const payload = {
+      id: user.id,
+      nickname: user.nickname,
+      channelDescription: user.channelDescription,
+      avatar: user.avatar,
+    }
+    return payload;
+  }
 
   login = async (req, res, next) => {
     try {
@@ -73,14 +90,7 @@ class AuthController {
         });
       }
 
-      const payload = {
-        id: user.id,
-        nickname: user.nickname,
-        avatar: user.avatar,
-      };
-      const token = jwt.sign(payload, process.env.JWT_SECRET, {
-        expiresIn: process.env.ACCESS_EXPIRES,
-      });
+      const token = this.createJwtToken(user);
 
       res.status(200).json({ success: true, token });
     } catch (error) {
@@ -101,27 +111,11 @@ class AuthController {
       //   console.error('Google 토큰 검증 실패:', error.message);
       // });
       if (returnValue.type === "login") {
-        const payload = {
-          id: returnValue.user.id,
-          nickname: returnValue.user.nickname,
-          avatar: returnValue.user.avatar,
-        };
-        console.log("google login payload", payload);
-        const token = jwt.sign(payload, process.env.JWT_SECRET, {
-          expiresIn: process.env.ACCESS_EXPIRES,
-        });
+        const token = this.createJwtToken(returnValue.user);
         return res.status(200).json({ success: true, token });
       } else if (returnValue.type === "signup") {
         // 회원가입 기능 아직 처리가 다 안 된 듯
-        const payload = {
-          id: returnValue.user.id,
-          nickname: returnValue.user.nickname,
-          avatar: returnValue.user.avatar,
-        };
-        console.log("google login payload", payload);
-        const token = jwt.sign(payload, process.env.JWT_SECRET, {
-          expiresIn: process.env.ACCESS_EXPIRES,
-        });
+        const token = this.createJwtToken(returnValue.user);
         return res.status(201).json({ success: true, token });
       }
       res.status(200).json({ success: true });

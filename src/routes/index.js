@@ -4,7 +4,7 @@ const authRouter = require("./auth");
 const videosRouter = require("./videos");
 const commentsRouter = require("./comments");
 const subscribesRouter = require("./subscribes");
-const channelsRouter = require("./channels");
+const usersRouter = require("./users");
 
 const { auth } = require("../middleware/auth");
 
@@ -35,6 +35,6 @@ router.use("/auth", authRouter);
 router.use("/videos", videosRouter);
 router.use("/comments", commentsRouter);
 router.use("/subscribes", subscribesRouter);
-router.use("/channels", channelsRouter);
+router.use("/users", usersRouter);
 
 module.exports = router;
