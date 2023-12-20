@@ -30,7 +30,7 @@ class CommentsController {
     });
     this.setOptionToComment(comment, user);
     return comment;
-  }
+  };
 
   /**
    * comment에 프론트에서 필요한 유저와의 상호작용 정보를 적용함.
@@ -45,7 +45,7 @@ class CommentsController {
       nickname: user.nickname,
       avatar: user.avatar,
     };
-  }
+  };
 
   /**
    * 답글 작성 api
@@ -55,9 +55,7 @@ class CommentsController {
       const { content, videoId, commentId } = req.body;
       const { user } = req.locals;
       const reply = await this.createReply(videoId, commentId, content, user);
-      res
-        .status(201)
-        .json({ success: true, reply });
+      res.status(201).json({ success: true, reply });
     } catch (error) {
       console.error(error);
     }
@@ -83,7 +81,7 @@ class CommentsController {
     await comment.save();
     this.setOptionToComment(reply, user);
     return reply;
-  }
+  };
 
   getCommentsCount = async (req, res) => {
     try {
@@ -179,20 +177,29 @@ class CommentsController {
     const { user } = req.locals;
     const { type } = req.body;
 
-    console.log("commentId", commentId);
-    const comment = await Comments.findOne({ where: { id: commentId } });
+    const comment = await Comments.findByPk(commentId);
     const commentLike = await CommentLike.findOne({
       where: { commentId, userId: user.id },
     });
-    console.log("commentLike", commentLike);
-    let liked = false;
-    let disliked = false;
 
+    const likeOptions = await this.applyCommentLike2(
+      type,
+      commentLike,
+      comment,
+      commentId,
+      user
+    );
+
+    res.status(201).json({ success: true, ...likeOptions });
+  };
+
+  applyCommentLike = async (type, commentLike, comment, commentId, user) => {
+    const likeOptions = { likes: 0, liked: false, disliked: false };
     if (type == "like") {
       if (!commentLike) {
         await CommentLike.create({ userId: user.id, commentId, type });
         comment.likes++;
-        liked = true;
+        likeOptions.liked = true;
       } else if (commentLike.type == "like") {
         await CommentLike.destroy({ where: { userId: user.id, commentId } });
         comment.likes--;
@@ -201,29 +208,84 @@ class CommentsController {
         comment.dislike--;
         await CommentLike.create({ userId: user.id, commentId, type });
         comment.likes++;
-        liked = true;
+        likeOptions.liked = true;
       }
     } else if (type == "dislike") {
       if (!commentLike) {
         await CommentLike.create({ userId: user.id, commentId, type });
         comment.dislike++;
-        disliked = true;
+        likeOptions.disliked = true;
       } else if (commentLike.type == "like") {
         await CommentLike.destroy({ where: { userId: user.id, commentId } });
         comment.likes--;
         await CommentLike.create({ userId: user.id, commentId, type });
         comment.dislike++;
-        disliked = true;
+        likeOptions.disliked = true;
       } else if (commentLike.type == "dislike") {
         await CommentLike.destroy({ where: { userId: user.id, commentId } });
         comment.dislike--;
       }
     }
-    await comment.save();
 
-    res
-      .status(201)
-      .json({ success: true, likes: comment.likes, liked, disliked });
+    await comment.save();
+    likeOptions.likes = comment.likes;
+    return likeOptions;
+  };
+
+  applyCommentLike2 = async (type, commentLike, comment, commentId, user) => {
+    const likeOptions = { likes: 0, liked: false, disliked: false };
+    if (!commentLike) {
+      if (type == "like") {
+        // noneLike
+        await this.createLike(user, comment, commentId, likeOptions);
+      } else if (type == "dislike") {
+        // noneDislike
+        await this.createDislike(user, comment, commentId, likeOptions);
+      }
+    } else if (commentLike.type == "like") {
+      if (type == "like") {
+        // likeLike
+        await this.deleteLike(user, comment, commentId);
+      } else if (type == "dislike") {
+        // likeDislike
+        await this.deleteLike(user, comment, commentId);
+        await this.createDislike(user, comment, commentId, likeOptions);
+      }
+    } else if (commentLike.type == "dislike") {
+      if (type == "like") {
+        // dislikeLike
+        await this.deleteDislike(user, comment, commentId);
+        await this.createLike(user, comment, commentId, likeOptions);
+      } else if (type == "dislike") {
+        // dislikeDislike
+        await this.deleteDislike(user, comment, commentId);
+      }
+    }
+    await comment.save();
+    likeOptions.likes = comment.likes;
+    return likeOptions;
+  };
+
+  createLike = async (user, comment, commentId, likeOptions) => {
+    await CommentLike.create({ userId: user.id, commentId, type: "like" });
+    comment.likes++;
+    likeOptions.liked = true;
+  };
+
+  createDislike = async (user, comment, commentId, likeOptions) => {
+    await CommentLike.create({ userId: user.id, commentId, type: "dislike" });
+    comment.dislike++;
+    likeOptions.disliked = true;
+  };
+
+  deleteLike = async (user, comment, commentId) => {
+    await CommentLike.destroy({ where: { userId: user.id, commentId } });
+    comment.likes--;
+  };
+
+  deleteDislike = async (user, comment, commentId) => {
+    await CommentLike.destroy({ where: { userId: user.id, commentId } });
+    comment.dislike--;
   };
 
   patchComment = async (req, res) => {
@@ -258,7 +320,7 @@ class CommentsController {
           .status(401)
           .json({ success: false, message: "올바른 유저가 아닙니다." });
       }
-      await Comments.destroy({where: {id: commentId}});
+      await Comments.destroy({ where: { id: commentId } });
     } catch (error) {
       console.error(error);
     }
