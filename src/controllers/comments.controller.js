@@ -182,7 +182,7 @@ class CommentsController {
       where: { commentId, userId: user.id },
     });
 
-    const likeOptions = await this.applyCommentLike2(
+    const likeOptions = await this.applyCommentLike(
       type,
       commentLike,
       comment,
@@ -194,45 +194,6 @@ class CommentsController {
   };
 
   applyCommentLike = async (type, commentLike, comment, commentId, user) => {
-    const likeOptions = { likes: 0, liked: false, disliked: false };
-    if (type == "like") {
-      if (!commentLike) {
-        await CommentLike.create({ userId: user.id, commentId, type });
-        comment.likes++;
-        likeOptions.liked = true;
-      } else if (commentLike.type == "like") {
-        await CommentLike.destroy({ where: { userId: user.id, commentId } });
-        comment.likes--;
-      } else if (commentLike.type == "dislike") {
-        await CommentLike.destroy({ where: { userId: user.id, commentId } });
-        comment.dislike--;
-        await CommentLike.create({ userId: user.id, commentId, type });
-        comment.likes++;
-        likeOptions.liked = true;
-      }
-    } else if (type == "dislike") {
-      if (!commentLike) {
-        await CommentLike.create({ userId: user.id, commentId, type });
-        comment.dislike++;
-        likeOptions.disliked = true;
-      } else if (commentLike.type == "like") {
-        await CommentLike.destroy({ where: { userId: user.id, commentId } });
-        comment.likes--;
-        await CommentLike.create({ userId: user.id, commentId, type });
-        comment.dislike++;
-        likeOptions.disliked = true;
-      } else if (commentLike.type == "dislike") {
-        await CommentLike.destroy({ where: { userId: user.id, commentId } });
-        comment.dislike--;
-      }
-    }
-
-    await comment.save();
-    likeOptions.likes = comment.likes;
-    return likeOptions;
-  };
-
-  applyCommentLike2 = async (type, commentLike, comment, commentId, user) => {
     const likeOptions = { likes: 0, liked: false, disliked: false };
     if (!commentLike) {
       if (type == "like") {
