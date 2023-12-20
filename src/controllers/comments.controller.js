@@ -8,50 +8,82 @@ class CommentsController {
     try {
       const { content, videoId } = req.body;
       const { user } = req.locals;
-      const comment = await Comments.create({
-        videoId,
-        userId: user.id,
-        content,
-      });
-      console.log("post comment", comment);
-      comment.dataValues.liked = false;
-      comment.dataValues.disliked = false;
-      comment.dataValues.likes = 0;
-      comment.dataValues.User = {
-        nickname: user.nickname,
-        avatar: user.avatar,
-      };
+      const comment = await this.createComment(videoId, content, user);
       res.status(201).json({ success: true, comment });
     } catch (error) {
       console.error(error);
     }
   };
 
+  /**
+   * create comment record
+   * @param {*} videoId uuid
+   * @param {*} content string
+   * @param {*} user Model
+   * @returns comment Model
+   */
+  createComment = async (videoId, content, user) => {
+    const comment = await Comments.create({
+      videoId,
+      userId: user.id,
+      content,
+    });
+    this.setOptionToComment(comment, user);
+    return comment;
+  }
+
+  /**
+   * comment에 프론트에서 필요한 유저와의 상호작용 정보를 적용함.
+   * 궁금한 점이 이러면 함수형 프로그래밍의 철학에 어긋나는 것 같은데 새로운 comment 객체를 만들어서 반환하는 것이 맞는 걸까?
+   * @param {*} comment Model
+   * @param {*} user Model
+   */
+  setOptionToComment = (comment, user) => {
+    comment.dataValues.liked = false;
+    comment.dataValues.disliked = false;
+    comment.dataValues.User = {
+      nickname: user.nickname,
+      avatar: user.avatar,
+    };
+  }
+
+  /**
+   * 답글 작성 api
+   */
   postReply = async (req, res) => {
     try {
       const { content, videoId, commentId } = req.body;
       const { user } = req.locals;
-      const reply = await Comments.create({
-        videoId,
-        userId: user.id,
-        content,
-        commentId,
-      });
-      const comment = await Comments.findByPk(commentId);
-      comment.replyNum++;
-      await comment.save();
-
-      reply.dataValues.User = { nickname: user.nickname, avatar: user.avatar };
-
-      console.log("post reply", reply);
-
+      const reply = await this.createReply(videoId, commentId, content, user);
       res
         .status(201)
-        .json({ success: true, reply, replyNum: comment.replyNum });
+        .json({ success: true, reply });
     } catch (error) {
       console.error(error);
     }
   };
+
+  /**
+   * create reply record
+   * @param {*} videoId uuid
+   * @param {*} commentId uuid
+   * @param {*} content string
+   * @param {*} user Model
+   * @returns reply Model
+   */
+  createReply = async (videoId, commentId, content, user) => {
+    const reply = await Comments.create({
+      videoId,
+      commentId,
+      content,
+      userId: user.id,
+    });
+    const comment = await Comments.findByPk(commentId);
+    comment.replyNum++;
+    await comment.save();
+    this.setOptionToComment(reply, user);
+    return reply;
+  }
 
   getCommentsCount = async (req, res) => {
     try {
