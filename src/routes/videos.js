@@ -17,7 +17,7 @@ router.post("/video", videosController.postVideo);
 
 router.get("/", videosController.getVideos);
 
-router.get("/:channelId", videosController.getChannelVideos);
+router.get("/channel-videos", videosController.getChannelVideos);
 
 router.get("/:videoId", videosController.getVideo);
 

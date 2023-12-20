@@ -146,18 +146,21 @@ class VideosController {
 
   getChannelVideos = async (req, res) => {
     try {
-      const { channelId } = req.params;
-      const video_order = req.query.video_order;
-      console.log('video_order type',typeof video_order);
+      const { channel_id, video_order } = req.query;
+      console.log("video_order type", typeof video_order);
       const int_video_order = Number(video_order);
       // 최신순, 인기순, 날짜순
-      const orderOptions = [["createdAt", "DESC"], ["views", "DESC"], ["createdAt", "ASC"]];
+      const orderOptions = [
+        ["createdAt", "DESC"],
+        ["views", "DESC"],
+        ["createdAt", "ASC"],
+      ];
       const channelVideos = await Video.findAll({
-        where: { writer: channelId },
+        where: { writer: channel_id },
         include: [
           { model: User, attributes: ["nickname", "avatar"], as: "author" },
         ],
-        order: [orderOptions[int_video_order]]
+        order: [orderOptions[int_video_order]],
       });
       res.status(200).json({ success: true, channelVideos });
     } catch (error) {
