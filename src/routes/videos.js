@@ -17,6 +17,8 @@ router.post("/video", videosController.postVideo);
 
 router.get("/", videosController.getVideos);
 
+router.get("/:channelId", videosController.getChannelVideos);
+
 router.get("/:videoId", videosController.getVideo);
 
 router.post("/:videoId/like", auth, videosController.postVideoLike);
