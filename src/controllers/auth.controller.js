@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
 const multer = require("multer");
+const redis = require("../redis");
 const path = require("path");
 
 class AuthController {
@@ -33,40 +34,14 @@ class AuthController {
       user.password = await bcrypt.hash(user.password, salt);
       await user.save();
 
-      const token = this.createJwtToken(user);
+      const tokens = this.createJwtTokens(user);
 
       // 응답
-      res.status(200).json({ success: true, data: token });
+      res.status(200).json({ success: true, tokens });
     } catch (error) {
       console.error(error);
     }
   };
-
-  /**
-   * JWT 토큰 생성
-   * @param {*} user: User Model
-   */
-  createJwtToken = (user) => {
-    const payload = this.createJwtPayload(user);
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: process.env.ACCESS_EXPIRES,
-    });
-    return token;
-  }
-
-  /**
-   * JWT Payload 생성
-   * @param {*} user: User Model
-   */
-  createJwtPayload = (user) => {
-    const payload = {
-      id: user.id,
-      nickname: user.nickname,
-      channelDescription: user.channelDescription,
-      avatar: user.avatar,
-    }
-    return payload;
-  }
 
   login = async (req, res, next) => {
     try {
@@ -90,12 +65,69 @@ class AuthController {
         });
       }
 
-      const token = this.createJwtToken(user);
+      const tokens = this.createJwtTokens(user);
 
-      res.status(200).json({ success: true, token });
+      res.status(200).json({ success: true, tokens });
     } catch (error) {
       console.error(error);
     }
+  };
+
+  /**
+   * JWT 토큰 생성
+   * @param {*} user: User Model
+   * @returns token
+   */
+  createJwtToken = (user) => {
+    const payload = this.createJwtPayload(user);
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: process.env.ACCESS_EXPIRES,
+    });
+    const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
+      expiresIn: process.env.REFRESH_EXPIRES,
+    });
+    return token;
+  };
+
+  /**
+   * JWT 토큰 생성
+   * @param {*} user: User Model
+   * @returns token
+   */
+  createJwtTokens = (user) => {
+    const payload = this.createJwtPayload(user);
+    const acessToken = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: process.env.ACCESS_EXPIRES,
+    });
+    const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
+      expiresIn: process.env.REFRESH_EXPIRES,
+    });
+    saveRefreshTokenToRedis(user, refreshToken);
+    return { acessToken, refreshToken };
+  };
+
+  /**
+   * JWT Payload 생성
+   * @param {*} user: User Model
+   */
+  createJwtPayload = (user) => {
+    const payload = {
+      id: user.id,
+      nickname: user.nickname,
+      channelDescription: user.channelDescription,
+      avatar: user.avatar,
+    };
+    return payload;
+  };
+
+  /**
+   * Redis에 refreshToken 저장
+   * @param {*} user User Model
+   * @param {*} refreshToken string
+   */
+  saveRefreshTokenToRedis = (user, refreshToken) => {
+    const key = `refreshToken:${user.id}`;
+    redis.set(key, refreshToken);
   };
 
   googleOauth = async (req, res) => {
@@ -111,12 +143,12 @@ class AuthController {
       //   console.error('Google 토큰 검증 실패:', error.message);
       // });
       if (returnValue.type === "login") {
-        const token = this.createJwtToken(returnValue.user);
-        return res.status(200).json({ success: true, token });
+        const tokens = this.createJwtTokens(returnValue.user);
+        return res.status(200).json({ success: true, tokens });
       } else if (returnValue.type === "signup") {
         // 회원가입 기능 아직 처리가 다 안 된 듯
-        const token = this.createJwtToken(returnValue.user);
-        return res.status(201).json({ success: true, token });
+        const tokens = this.createJwtTokens(returnValue.user);
+        return res.status(201).json({ success: true, tokens });
       }
       res.status(200).json({ success: true });
     } catch (error) {
@@ -168,21 +200,46 @@ class AuthController {
       // 파일 처리 또는 필요한 작업을 수행
       user.avatar = req.file.filename;
       await user.save();
-      res.json({ success: true, type: 'change', avatar: user.avatar });
+      res.json({ success: true, type: "change", avatar: user.avatar });
     } catch (error) {
       console.error(error);
     }
-  }
+  };
 
   avatarReset = async (req, res) => {
     try {
       const { user } = req.locals;
-      user.avatar = 'avatar.png';
+      user.avatar = "avatar.png";
       await user.save();
-      res.status(200).json({ success: true, type: 'reset', avatar: 'avatar.png' });
+      res
+        .status(200)
+        .json({ success: true, type: "reset", avatar: "avatar.png" });
     } catch (error) {
       console.error(error);
     }
+  };
+
+  tokenRefresh = async (req, res) => {
+    const { refreshToken } = req.body;
+    // Redis에서 Refresh Token 검증
+    client.get(refreshToken, (err, userData) => {
+      if (err || !userData) {
+        return res.status(401).json({ message: "Invalid refresh token" });
+      }
+
+      const decodedPayload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+  
+      // 유효하면 새로운 Access Token 발급
+      const accessToken = jwt.sign(
+        {
+          ...decodedPayload
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.ACCESS_EXPIRES }
+      );
+  
+      res.json({ accessToken });
+    });
   }
 }
 

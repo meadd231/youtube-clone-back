@@ -24,25 +24,9 @@ router.put(
 );
 router.put("/avatar/reset", auth, authController.avatarReset);
 
-router.post("token/refresh", (req, res) => {
-  const { refreshToken } = req.body;
-  // Redis에서 Refresh Token 검증
-  client.get(refreshToken, (err, userData) => {
-    if (err || !userData) {
-      return res.status(401).json({ message: "Invalid refresh token" });
-    }
-
-    // 유효하면 새로운 Access Token 발급
-    const accessToken = jwt.sign(
-      {
-        /* 사용자 정보 */
-      },
-      "your-access-token-secret",
-      { expiresIn: "15m" }
-    );
-
-    res.json({ accessToken });
-  });
-});
+/**
+ * 어떤 로직으로 동작해야 할까?
+ */
+router.post("token/refresh", authController.tokenRefresh);
 
 module.exports = router;
