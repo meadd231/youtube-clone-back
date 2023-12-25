@@ -102,7 +102,7 @@ class AuthController {
     const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
       expiresIn: process.env.REFRESH_EXPIRES,
     });
-    saveRefreshTokenToRedis(user, refreshToken);
+    this.saveRefreshTokenToRedis(user, refreshToken);
     return { acessToken, refreshToken };
   };
 
@@ -219,27 +219,39 @@ class AuthController {
     }
   };
 
+  /**
+   * refreshToken의 유효성 검사 후 accessToken 반환
+   */
   tokenRefresh = async (req, res) => {
     const { refreshToken } = req.body;
-    // Redis에서 Refresh Token 검증
-    client.get(refreshToken, (err, userData) => {
-      if (err || !userData) {
-        return res.status(401).json({ message: "Invalid refresh token" });
-      }
-
+    
+    try {
       const decodedPayload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
   
-      // 유효하면 새로운 Access Token 발급
-      const accessToken = jwt.sign(
-        {
-          ...decodedPayload
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: process.env.ACCESS_EXPIRES }
-      );
+      // Redis에서 Refresh Token 검증
+      redis.get(`refreshToken:${decodedPayload.id}`, (err, userData) => {
+        if (err || !userData) {
+          return res.status(401).json({ message: "유효하지 않은 리프레시 토큰" });
+        }
   
-      res.json({ accessToken });
-    });
+        // 유효하면 새로운 Access Token 발급
+        const accessToken = jwt.sign(
+          {
+            ...decodedPayload
+          },
+          process.env.JWT_SECRET,
+          { expiresIn: process.env.ACCESS_EXPIRES }
+        );
+  
+        res.json({ accessToken });
+      });
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({ message: '리프레시 토큰이 만료되었습니다', refreshTokenExpired: true });
+      } else {
+        return res.status(401).json({ message: '유효하지 않은 리프레시 토큰' });
+      }
+    }
   }
 }
 
