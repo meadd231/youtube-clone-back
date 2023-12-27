@@ -96,14 +96,14 @@ class AuthController {
    */
   createJwtTokens = (user) => {
     const payload = this.createJwtPayload(user);
-    const acessToken = jwt.sign(payload, process.env.JWT_SECRET, {
+    const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: process.env.ACCESS_EXPIRES,
     });
     const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
       expiresIn: process.env.REFRESH_EXPIRES,
     });
     this.saveRefreshTokenToRedis(user, refreshToken);
-    return { acessToken, refreshToken };
+    return { accessToken, refreshToken };
   };
 
   /**
@@ -130,18 +130,12 @@ class AuthController {
     redis.set(key, refreshToken);
   };
 
+  /**
+   * 구글 로그인, 회원가입 api
+   */
   googleOauth = async (req, res) => {
     try {
-      console.log("/google-oauth", req.body);
       const returnValue = await this.verifyGoogleToken(req.body.credential);
-      // .then(payload => {
-      //   // 토큰 검증 성공, payload에 사용자 정보가 들어있습니다.
-      //   console.log('Google 토큰 검증 성공:', payload);
-      // })
-      // .catch(error => {
-      //   // 토큰 검증 실패
-      //   console.error('Google 토큰 검증 실패:', error.message);
-      // });
       if (returnValue.type === "login") {
         const tokens = this.createJwtTokens(returnValue.user);
         return res.status(200).json({ success: true, tokens });
@@ -233,7 +227,10 @@ class AuthController {
         if (err || !userData) {
           return res.status(401).json({ message: "유효하지 않은 리프레시 토큰" });
         }
-  
+        // user를 찾아서 새로 만들어주는 게 나을려나?
+        delete decodedPayload.iat;
+        delete decodedPayload.exp;
+        console.log('decodedPayload', decodedPayload);
         // 유효하면 새로운 Access Token 발급
         const accessToken = jwt.sign(
           {
