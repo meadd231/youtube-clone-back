@@ -27,6 +27,6 @@ router.put("/avatar/reset", auth, authController.avatarReset);
 /**
  * 어떤 로직으로 동작해야 할까?
  */
-router.post("token/refresh", authController.tokenRefresh);
+router.post("/token/refresh", authController.tokenRefresh);
 
 module.exports = router;
