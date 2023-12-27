@@ -2,6 +2,7 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const cors = require('cors');
+const errorHandler = require('./middleware/error-handler');
 require('dotenv').config();
 // const multipart = require('connect-multiparty');
 const port = process.env.HOST_PORT;
@@ -38,6 +39,9 @@ app.options('*', (req, res) => {
 // routes
 const routes = require('./routes');
 app.use('/api', routes);
+
+// errorHandler
+app.use(errorHandler);
 
 app.listen(port, () => {
   console.log(`running ${port}`);
