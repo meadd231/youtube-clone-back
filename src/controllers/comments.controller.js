@@ -4,19 +4,19 @@ class CommentsController {
   /**
    * 댓글 작성 api
    */
-  postComment = async (req, res) => {
+  postComment = async (req, res, next) => {
     try {
       const { content, videoId } = req.body;
       const { user } = req.locals;
       const comment = await this.createComment(videoId, content, user);
       res.status(201).json({ success: true, comment });
     } catch (error) {
-      console.error(error);
+      next(error, req, res, '댓글 작성에 실패했습니다.');
     }
   };
 
   /**
-   * create comment record
+   * create comment record and set options
    * @param {*} videoId uuid
    * @param {*} content string
    * @param {*} user Model
@@ -93,6 +93,9 @@ class CommentsController {
     }
   };
 
+  /**
+   * 댓글 조회 api
+   */
   getComments = async (req, res) => {
     const { videoId } = req.params;
     const { user } = req.body;
@@ -111,6 +114,9 @@ class CommentsController {
     }
   };
 
+  /**
+   * 답글 조회 api
+   */
   getReplies = async (req, res) => {
     try {
       const { commentId } = req.params;
