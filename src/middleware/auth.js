@@ -12,6 +12,7 @@ const auth = async (req, res, next) => {
   next();
 };
 
+// 근대 이걸 진짜 해야 하나? 그러면 토큰을 사용하는 이유가 없지 않나? 세션을 사용하던가. 하겠지.
 const findUserIdByToken = (token) => {
   try {
     // JWT를 디코딩하여 토큰의 내용을 확인

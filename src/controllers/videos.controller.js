@@ -191,6 +191,12 @@ class VideosController {
     }
   };
 
+  /**
+   * redis의 기능을 바탕으로 video record의 views를 증가시킴
+   * @param {*} clientIp string
+   * @param {*} video Model<Video>
+   * @returns 
+   */
   increaseViewCount = async (clientIp, video) => {
     const key = `clent-ip:${clientIp}:video:${video.id}:views`;
 
@@ -215,8 +221,12 @@ class VideosController {
     }
   };
 
-  // 좋아요 api
-  // 경우의 수 6개
+  /**
+   * 좋아요 api
+   * / 경우의 수 2 * 3
+   * 1. 누른 버튼 like, dislike
+   * 2. 현재 상황 none, like, dislike
+   */
   postVideoLike = async (req, res) => {
     try {
       const { videoId } = req.params;
