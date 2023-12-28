@@ -97,9 +97,9 @@ class CommentsController {
    * 댓글 조회 api
    */
   getComments = async (req, res) => {
-    const { videoId } = req.params;
-    const { user } = req.body;
     try {
+      const { videoId } = req.params;
+      const { user } = req.locals;
       const comments = await Comments.findAll({
         where: { videoId, commentId: null },
         include: [{ model: User, attributes: ["nickname", "avatar"] }],
@@ -120,7 +120,7 @@ class CommentsController {
   getReplies = async (req, res) => {
     try {
       const { commentId } = req.params;
-      const { user } = req.body;
+      const { user } = req.locals;
 
       const comments = await Comments.findAll({
         where: { commentId },

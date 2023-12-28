@@ -220,7 +220,7 @@ class VideosController {
   postVideoLike = async (req, res) => {
     try {
       const { videoId } = req.params;
-      const { id } = req.body.user;
+      const { id } = req.locals.user;
       const { type } = req.body;
 
       const video = await Video.findOne({ where: { id: videoId } });

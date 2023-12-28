@@ -20,7 +20,7 @@ class SubscribesController {
   postSubscribe = async (req, res) => {
     try {
       const { writer } = req.body; // video writer id
-      const { id } = req.body.user; // user id
+      const { id } = req.locals.user; // user id
 
       const subscribe = await Subscription.findOne({
         where: { channelId: writer, subscriberId: id },
