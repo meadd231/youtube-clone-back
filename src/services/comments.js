@@ -1,3 +1,5 @@
+const { Video, User, Comments, CommentLike } = require("../sequelize");
+
 class CommentsService {
   /**
    * create comment record and set options
@@ -17,6 +19,28 @@ class CommentsService {
   };
 
   /**
+   * create reply record
+   * @param {*} videoId uuid
+   * @param {*} commentId uuid
+   * @param {*} content string
+   * @param {*} user Model<User>
+   * @returns reply Model
+   */
+  createReply = async (videoId, commentId, content, user) => {
+    const reply = await Comments.create({
+      videoId,
+      commentId,
+      content,
+      userId: user.id,
+    });
+    const comment = await Comments.findByPk(commentId);
+    comment.replyNum++;
+    await comment.save();
+    this.setOptionToComment(reply, user);
+    return reply;
+  };
+
+  /**
    * comment에 프론트에서 필요한 유저와의 상호작용 정보를 적용함.
    * 궁금한 점이 이러면 함수형 프로그래밍의 철학에 어긋나는 것 같은데 새로운 comment 객체를 만들어서 반환하는 것이 맞는 걸까?
    * @param {*} comment Model
@@ -30,6 +54,48 @@ class CommentsService {
       avatar: user.avatar,
     };
   };
+
+    /**
+   * comments 배열의 각 comment에 좋아요, 싫어요가 적용됐는지 확인하고 컬럼 추가 후 반환
+   * @param {*} user Model<User>
+   * @param {*} comments Model<Comment>
+   * @returns commentWithLikes array<Comment>
+   */
+    checkCommentLiked = async (user, comments) => {
+      let commentWithLikes;
+      if (user) {
+        // 로그인이 됐으면
+        console.log("로그인 됐을 때 성공");
+        commentWithLikes = await Promise.all(
+          comments.map(async (comment) => {
+            const commentLike = await CommentLike.findOne({
+              where: { commentId: comment.id, userId: user.id },
+            });
+            comment.dataValues.liked = false;
+            comment.dataValues.disliked = false;
+            if (commentLike) {
+              if (commentLike.type === "like") {
+                comment.dataValues.liked = true;
+                return comment;
+              } else if (commentLike.type === "dislike") {
+                comment.dataValues.disliked = true;
+                return comment;
+              }
+            }
+            return comment;
+          })
+        );
+      } else if (!user) {
+        // 로그인 안 됐으면
+        console.log("로그인 안 됐을 때 성공");
+        commentWithLikes = await comments.map((comment) => {
+          comment.dataValues.liked = false;
+          comment.dataValues.disliked = false;
+          return comment;
+        });
+      }
+      return commentWithLikes;
+    };
 }
 
 module.exports = CommentsService;

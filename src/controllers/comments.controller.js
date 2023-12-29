@@ -24,33 +24,11 @@ class CommentsController {
     try {
       const { content, videoId, commentId } = req.body;
       const { user } = req.locals;
-      const reply = await this.createReply(videoId, commentId, content, user);
+      const reply = await this.commentsService.createReply(videoId, commentId, content, user);
       res.status(201).json({ success: true, reply });
     } catch (error) {
       console.error(error);
     }
-  };
-
-  /**
-   * create reply record
-   * @param {*} videoId uuid
-   * @param {*} commentId uuid
-   * @param {*} content string
-   * @param {*} user Model
-   * @returns reply Model
-   */
-  createReply = async (videoId, commentId, content, user) => {
-    const reply = await Comments.create({
-      videoId,
-      commentId,
-      content,
-      userId: user.id,
-    });
-    const comment = await Comments.findByPk(commentId);
-    comment.replyNum++;
-    await comment.save();
-    this.setOptionToComment(reply, user);
-    return reply;
   };
 
   getCommentsCount = async (req, res) => {
@@ -76,7 +54,7 @@ class CommentsController {
         order: [["likes", "DESC"]],
       });
 
-      const commentWithLiked = await this.checkCommentLiked(user, comments);
+      const commentWithLiked = await this.commentsService.checkCommentLiked(user, comments);
 
       res.status(200).json({ success: true, comments: commentWithLiked });
     } catch (error) {
@@ -98,54 +76,12 @@ class CommentsController {
         order: [["createdAt", "ASC"]],
       });
 
-      const commentWithLiked = await this.checkCommentLiked(user, comments);
+      const commentWithLiked = await this.commentsService.checkCommentLiked(user, comments);
 
       res.status(200).json({ success: true, comments: commentWithLiked });
     } catch (error) {
       console.error(error);
     }
-  };
-
-  /**
-   * comments 배열의 각 comment에 좋아요, 싫어요가 적용됐는지 확인하고 컬럼 추가 후 반환
-   * @param {*} user User model의 한 객체
-   * @param {*} comments Comment 배열
-   * @returns commentWithLikes 배열
-   */
-  checkCommentLiked = async (user, comments) => {
-    let commentWithLikes;
-    if (user) {
-      // 로그인이 됐으면
-      console.log("로그인 됐을 때 성공");
-      commentWithLikes = await Promise.all(
-        comments.map(async (comment) => {
-          const commentLike = await CommentLike.findOne({
-            where: { commentId: comment.id, userId: user.id },
-          });
-          comment.dataValues.liked = false;
-          comment.dataValues.disliked = false;
-          if (commentLike) {
-            if (commentLike.type === "like") {
-              comment.dataValues.liked = true;
-              return comment;
-            } else if (commentLike.type === "dislike") {
-              comment.dataValues.disliked = true;
-              return comment;
-            }
-          }
-          return comment;
-        })
-      );
-    } else if (!user) {
-      // 로그인 안 됐으면
-      console.log("로그인 안 됐을 때 성공");
-      commentWithLikes = await comments.map((comment) => {
-        comment.dataValues.liked = false;
-        comment.dataValues.disliked = false;
-        return comment;
-      });
-    }
-    return commentWithLikes;
   };
 
   postCommentLike = async (req, res) => {
