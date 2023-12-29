@@ -1,12 +1,36 @@
 const { User } = require("../sequelize");
 const jwt = require("jsonwebtoken");
 
+/**
+ * 로그인 안 해도 되고, 했으면 다르게 동작하도록하는 auth
+ */
 const auth = async (req, res, next) => {
   const token = req.headers.authorization;
   console.log("token", token);
 
   const userId = findUserIdByToken(token);
   const user = await User.findByPk(userId);
+  req.locals = { user };
+  req.body.user = user;
+  next();
+};
+
+/**
+ * 로그인 안 됐으면 반드시 막는 auth
+ */
+const auth2 = async (req, res, next) => {
+  const token = req.headers.authorization;
+  console.log("token", token);
+
+  const userId = findUserIdByToken(token);
+  if (userId === null) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  const user = await User.findByPk(userId);
+  if (!user) {
+    // If user is not found, you can handle it as per your requirements
+    return res.status(401).json({ error: 'User not found' });
+  }
   req.locals = { user };
   req.body.user = user;
   next();
