@@ -5,4 +5,17 @@ youtube-clone backend express
 2. sequelize
 3. jest
 
-주요 기능
+## Features
+- auth
+  - login
+  - signup
+  - google login
+
+- Videos crud
+  - 비디오 업로드
+  - 썸네일 생성
+  - 비디오 CRUD
+ 
+- Comments
+  - 댓글 CRUD
+  - 답글 CRUD
