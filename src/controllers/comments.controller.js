@@ -94,7 +94,7 @@ class CommentsController {
       where: { commentId, userId: user.id },
     });
 
-    const likeOptions = await this.applyCommentLike(
+    const likeOptions = await this.commentsService.applyCommentLike(
       type,
       commentLike,
       comment,
@@ -103,62 +103,6 @@ class CommentsController {
     );
 
     res.status(201).json({ success: true, ...likeOptions });
-  };
-
-  applyCommentLike = async (type, commentLike, comment, commentId, user) => {
-    const likeOptions = { likes: 0, liked: false, disliked: false };
-    if (!commentLike) {
-      if (type == "like") {
-        // noneLike
-        await this.createLike(user, comment, commentId, likeOptions);
-      } else if (type == "dislike") {
-        // noneDislike
-        await this.createDislike(user, comment, commentId, likeOptions);
-      }
-    } else if (commentLike.type == "like") {
-      if (type == "like") {
-        // likeLike
-        await this.deleteLike(user, comment, commentId);
-      } else if (type == "dislike") {
-        // likeDislike
-        await this.deleteLike(user, comment, commentId);
-        await this.createDislike(user, comment, commentId, likeOptions);
-      }
-    } else if (commentLike.type == "dislike") {
-      if (type == "like") {
-        // dislikeLike
-        await this.deleteDislike(user, comment, commentId);
-        await this.createLike(user, comment, commentId, likeOptions);
-      } else if (type == "dislike") {
-        // dislikeDislike
-        await this.deleteDislike(user, comment, commentId);
-      }
-    }
-    await comment.save();
-    likeOptions.likes = comment.likes;
-    return likeOptions;
-  };
-
-  createLike = async (user, comment, commentId, likeOptions) => {
-    await CommentLike.create({ userId: user.id, commentId, type: "like" });
-    comment.likes++;
-    likeOptions.liked = true;
-  };
-
-  createDislike = async (user, comment, commentId, likeOptions) => {
-    await CommentLike.create({ userId: user.id, commentId, type: "dislike" });
-    comment.dislike++;
-    likeOptions.disliked = true;
-  };
-
-  deleteLike = async (user, comment, commentId) => {
-    await CommentLike.destroy({ where: { userId: user.id, commentId } });
-    comment.likes--;
-  };
-
-  deleteDislike = async (user, comment, commentId) => {
-    await CommentLike.destroy({ where: { userId: user.id, commentId } });
-    comment.dislike--;
   };
 
   patchComment = async (req, res) => {
