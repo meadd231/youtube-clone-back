@@ -4,6 +4,7 @@ youtube-clone backend express
 1. express
 2. sequelize
 3. jest
+4. passport.js
 
 ## Features
 - auth
