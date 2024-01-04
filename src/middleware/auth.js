@@ -2,7 +2,7 @@ const { User } = require("../sequelize");
 const jwt = require("jsonwebtoken");
 
 /**
- * 로그인 안 해도 되고, 했으면 다르게 동작하도록하는 auth
+ * 로그인 안 해도 되는 auth. 했을 때와 안 했을 때 다르게 동작함.
  */
 const auth = async (req, res, next) => {
   const token = req.headers.authorization;
@@ -16,24 +16,50 @@ const auth = async (req, res, next) => {
 };
 
 /**
- * 로그인 안 됐으면 반드시 막는 auth
+ * 로그인 안 해도 되는 auth. 했을 때와 안 했을 때 다르게 동작함.
+ * 로그인 안 했을 때 어떤 변수에 뭔가 값을 담아서 보낼까?
  */
-const auth2 = async (req, res, next) => {
+const authOption = async (req, res, next) => {
   const token = req.headers.authorization;
   console.log("token", token);
 
   const userId = findUserIdByToken(token);
-  if (userId === null) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
   const user = await User.findByPk(userId);
-  if (!user) {
-    // If user is not found, you can handle it as per your requirements
-    return res.status(401).json({ error: 'User not found' });
+  let logined = false;
+  if (user) {
+    logined = true;
   }
-  req.locals = { user };
+  req.locals = { user, logined };
   req.body.user = user;
   next();
+};
+
+/**
+ * 로그인 해야 하는 auth
+ */
+const authNeed = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization;
+    console.log("token", token);
+
+    const userId = findUserIdByToken(token);
+    if (userId === null) {
+      throw new Error("Unauthorized");
+    }
+    const user = await User.findByPk(userId);
+    if (!user) {
+      // If user is not found, you can handle it as per your requirements
+      return res.status(401).json({ error: "User not found" });
+    }
+    req.locals = { user };
+    req.body.user = user;
+    next();
+  } catch (error) {
+    console.error("Authentication error:", error);
+
+    // 토큰이 유효하지 않거나 오류가 발생한 경우에 대한 응답을 보내거나 다른 적절한 조치를 취할 수 있습니다.
+    return res.status(500).json({ error: "Authentication error" });
+  }
 };
 
 // 근대 이걸 진짜 해야 하나? 그러면 토큰을 사용하는 이유가 없지 않나? 세션을 사용하던가. 하겠지.
@@ -55,4 +81,4 @@ const findUserIdByToken = (token) => {
   }
 };
 
-module.exports = { auth };
+module.exports = { auth, authOption, authNeed };
