@@ -6,6 +6,8 @@ const multer = require("multer");
 const redis = require("../redis");
 const path = require("path");
 
+const AuthService = require("../services/auth");
+
 class AuthController {
   constructor() {
     this.CLIENT_ID =
@@ -24,22 +26,21 @@ class AuthController {
     });
     this.upload = multer({ storage: this.storage });
   }
-  signup = async (req, res) => {
+
+  authService = new AuthService();
+
+  signup = async (req, res, next) => {
     try {
       const user = await User.create(req.body);
 
-      // 비밀번호 해시화
-      const salt = await bcrypt.genSalt(10);
-
-      user.password = await bcrypt.hash(user.password, salt);
+      user.password = await this.authService.bcryptHashing(user.password);
       await user.save();
 
-      const tokens = this.createJwtTokens(user);
+      const tokens = this.authService.createJwtTokens(user);
 
-      // 응답
       res.status(200).json({ success: true, tokens });
     } catch (error) {
-      console.error(error);
+      next(error, req, res, '회원가입에 실패했습니다.');
     }
   };
 
@@ -65,59 +66,12 @@ class AuthController {
         });
       }
 
-      const tokens = this.createJwtTokens(user);
+      const tokens = this.authService.createJwtTokens(user);
 
       res.status(200).json({ success: true, tokens });
     } catch (error) {
-      console.error(error);
+      next(error, req, res, '로그인에 실패했습니다.');
     }
-  };
-
-  /**
-   * JWT 토큰 생성
-   * @param {*} user: User Model
-   * @returns token
-   */
-  createJwtToken = (user) => {
-    const payload = this.createJwtPayload(user);
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: process.env.ACCESS_EXPIRES,
-    });
-    const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
-      expiresIn: process.env.REFRESH_EXPIRES,
-    });
-    return token;
-  };
-
-  /**
-   * JWT 토큰 생성
-   * @param {*} user: User Model
-   * @returns token
-   */
-  createJwtTokens = (user) => {
-    const payload = this.createJwtPayload(user);
-    const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: process.env.ACCESS_EXPIRES,
-    });
-    const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
-      expiresIn: process.env.REFRESH_EXPIRES,
-    });
-    this.saveRefreshTokenToRedis(user, refreshToken);
-    return { accessToken, refreshToken };
-  };
-
-  /**
-   * JWT Payload 생성
-   * @param {*} user: User Model
-   */
-  createJwtPayload = (user) => {
-    const payload = {
-      id: user.id,
-      nickname: user.nickname,
-      channelDescription: user.channelDescription,
-      avatar: user.avatar,
-    };
-    return payload;
   };
 
   /**
@@ -133,20 +87,20 @@ class AuthController {
   /**
    * 구글 로그인, 회원가입 api
    */
-  googleOauth = async (req, res) => {
+  googleOauth = async (req, res, next) => {
     try {
       const returnValue = await this.verifyGoogleToken(req.body.credential);
       if (returnValue.type === "login") {
-        const tokens = this.createJwtTokens(returnValue.user);
+        const tokens = this.authService.createJwtTokens(returnValue.user);
         return res.status(200).json({ success: true, tokens });
       } else if (returnValue.type === "signup") {
         // 회원가입 기능 아직 처리가 다 안 된 듯
-        const tokens = this.createJwtTokens(returnValue.user);
+        const tokens = this.authService.createJwtTokens(returnValue.user);
         return res.status(201).json({ success: true, tokens });
       }
       res.status(200).json({ success: true });
     } catch (error) {
-      console.error(error);
+      next(error, req, res, '구글 로그인에 실패했습니다.');
     }
   };
 
@@ -187,7 +141,7 @@ class AuthController {
     }
   };
 
-  putAvatar = async (req, res) => {
+  putAvatar = async (req, res, next) => {
     try {
       const { user } = req.locals;
       console.log("File received:", req.file);
@@ -196,11 +150,11 @@ class AuthController {
       await user.save();
       res.json({ success: true, type: "change", avatar: user.avatar });
     } catch (error) {
-      console.error(error);
+      next(error, req, res, '아바타 저장에 실패했습니다.');
     }
   };
 
-  avatarReset = async (req, res) => {
+  avatarReset = async (req, res, next) => {
     try {
       const { user } = req.locals;
       user.avatar = "avatar.png";
@@ -209,7 +163,7 @@ class AuthController {
         .status(200)
         .json({ success: true, type: "reset", avatar: "avatar.png" });
     } catch (error) {
-      console.error(error);
+      next(error, req, res, '아바타 초기화에 실패했습니다.');
     }
   };
 
