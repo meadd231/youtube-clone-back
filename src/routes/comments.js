@@ -10,7 +10,7 @@ const commentsController = new CommentsController();
 router.post(
   "/comment",
   authNeed,
-  body("content").isLength({ min: 1, max: 100 }),
+  [body("content").isLength({ min: 1, max: 100 }).withMessage('댓글 내용은 1자 이상 100자 이하여야 합니다.')],
   commentsController.postComment
 );
 

@@ -8,6 +8,13 @@ class CommentsController {
    */
   postComment = async (req, res, next) => {
     try {
+      const errors = validationResult(req);
+
+      // 오류가 있는 경우
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+      
       const { content, videoId } = req.body;
       const { user } = req.locals;
       const comment = await this.commentsService.createComment(videoId, content, user);
