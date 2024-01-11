@@ -66,6 +66,7 @@ class CommentsService {
       if (user) {
         // 로그인이 됐으면
         console.log("로그인 됐을 때 성공");
+        // 여기를 하나의 함수로 쪼개 볼까? 그러면 글을 읽듯이 하는 게 될 것 같은데?
         commentWithLikes = await Promise.all(
           comments.map(async (comment) => {
             const commentLike = await CommentLike.findOne({
@@ -87,6 +88,7 @@ class CommentsService {
         );
       } else if (!user) {
         // 로그인 안 됐으면
+        // 프론트 쪽에서 이걸 그냥 다 없으면 false로 받게 할 수는 없을까? 그러면 이 코드를 제거할 수 있을 것 같다.
         console.log("로그인 안 됐을 때 성공");
         commentWithLikes = await comments.map((comment) => {
           comment.dataValues.liked = false;
