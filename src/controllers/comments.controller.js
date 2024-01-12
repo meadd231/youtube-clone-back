@@ -1,4 +1,5 @@
 const { Video, User, Comments, CommentLike } = require("../sequelize");
+const { validationResult } = require("express-validator");
 const CommentsService = require("../services/comments");
 
 class CommentsController {
