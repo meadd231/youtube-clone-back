@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test:unit": "jest __tests__/unit --forceExit",
-    "start": "nodemon src/app",
+    "start": "nodemon src/server",
     "test": "jest"
   },
   "keywords": [],
