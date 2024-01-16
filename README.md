@@ -6,6 +6,11 @@ youtube-clone backend express
 3. jest
 4. passport.js
 
+
+## Database Model
+
+![Screenshot](screenshots/youtube-clone-erd.png)
+
 ## Features
 - auth
   - login
