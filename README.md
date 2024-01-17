@@ -15,9 +15,9 @@ youtube-clone backend express
 - auth
   - login
   - signup
-  - google login
+  - google oauth
 
-- Videos crud
+- Videos
   - 비디오 업로드
   - 썸네일 생성
   - 비디오 CRUD
